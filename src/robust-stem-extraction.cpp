@@ -20,7 +20,7 @@
 // #include "pcl_conversions/pcl_conversions.h"
 
 int v1(0), v2(1);
-bool sea_vis_flag = false;
+bool sea_vis_flag = true;
 
 pcl::visualization::PCLVisualizer::Ptr viewer_alg1;
 // sensor_msgs::PointCloud2 toROS_msg(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud){
@@ -350,8 +350,8 @@ bool stem_analyser(pcl::PointCloud<pcl::PointXYZRGB>::Ptr plant_cloud, float adj
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr SSR_Region(new pcl::PointCloud<pcl::PointXYZRGB>);
     
     boxFilter.setInputCloud(merged_centroid_cloud);
-    boxFilter.setMin(Eigen::Vector4f(-0.03,-0.03,plant_min(2),1.0));
-    boxFilter.setMax(Eigen::Vector4f(0.03,0.03, plant_min(2) + 0.05, 1.0));
+    boxFilter.setMin(Eigen::Vector4f(-0.05,-0.05,plant_min(2),1.0));
+    boxFilter.setMax(Eigen::Vector4f(0.05,0.05, plant_min(2) + 0.05, 1.0));
     boxFilter.filter(*SSR_Region);
     sor.setLeafSize (0.03,0.03,0.03);
     sor.setInputCloud (SSR_Region);
@@ -381,8 +381,8 @@ bool stem_analyser(pcl::PointCloud<pcl::PointXYZRGB>::Ptr plant_cloud, float adj
             pcl::PointXYZRGB start_pt = nextpt;
             std::cout << last_stem_pt << std::endl;
             if(stem_point_extract_alg1_vis(merged_centroid_cloud,nextpt,local_searched_nearest_points,other_line_segs,success_line,nextpt,last_stem_pt,i,adjacent_dist,60.0,15)){
-                printf("[%ld]: [%f, %f, %f], Line Size - [Normal %ld, Success: %ld]\n",i, nextpt.x,nextpt.y,nextpt.z, other_line_segs.size(), success_line.size());
-                std::cout << "P1 merged_centroid_cloud Cloud Size = " << merged_centroid_cloud->points.size()<< std::endl;
+                // printf("[%ld]: [%f, %f, %f], Line Size - [Normal %ld, Success: %ld]\n",i, nextpt.x,nextpt.y,nextpt.z, other_line_segs.size(), success_line.size());
+                // std::cout << "P1 merged_centroid_cloud Cloud Size = " << merged_centroid_cloud->points.size()<< std::endl;
 
                 searched_stem->points.push_back(nextpt);
 
@@ -502,25 +502,38 @@ bool stem_analyser(pcl::PointCloud<pcl::PointXYZRGB>::Ptr plant_cloud, float adj
 
 int main(int argc, char** argv){
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr plant_cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
-
+    std::cout << argc << std::endl;
     if(argc<2){
         printf("[This File] [cloud.pcd] [visulization(1/0)]");
     }
     else if(argc == 2){
-        if (pcl::io::loadPCDFile(argv[2], *plant_cloud) == -1) {
+        if (pcl::io::loadPCDFile(argv[1], *plant_cloud) == -1) {
             std::cerr << "Error reading point cloud files." << std::endl;
             return -1;
-            sea_vis_flag = false;
+            // sea_vis_flag = false;
         }
-    }else if (argc == 3){
-        if (pcl::io::loadPCDFile(argv[2], *plant_cloud) == -1) {
-            std::cerr << "Error reading point cloud files." << std::endl;
-            return -1;
-            sea_vis_flag = false;
-        }
-        sea_vis_flag = bool(std::stoi(argv[3]));
     }
+    // else if (argc == 3){
+    //     if (pcl::io::loadPCDFile(argv[1], *plant_cloud) == -1) {
+    //         std::cerr << "Error reading point cloud files." << std::endl;
+    //         return -1;
+    //         sea_vis_flag = false;
+    //     }
+    //     if(std::stoi(argv[3]) == 1 ){
+    //         sea_vis_flag = true;
+    //     }
+    // }
+    if(sea_vis_flag){
+        viewer_alg1.reset(new pcl::visualization::PCLVisualizer("SEA Debugger"));
+        viewer_alg1->createViewPort(0.0,0.0,1.0,1.0,v1);
+        viewer_alg1->addCoordinateSystem(0.1);
+    }
+    for (float adj_dist = 0.02; adj_dist < 0.15; adj_dist = adj_dist + 0.005)
+    {
+        stem_analyser(plant_cloud, adj_dist);
 
+    }
+    
 
     return 0;
 }
